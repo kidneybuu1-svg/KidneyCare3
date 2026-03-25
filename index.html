@@ -237,6 +237,35 @@
         document.getElementById('res-' + type).style.display = 'block';
         window.scrollTo(0, 0);
     }
+    function getSelectedSymptoms() {
+    let symptoms = [];
+    document.querySelectorAll('input[type="checkbox"]:checked').forEach(item => {
+        symptoms.push(item.nextElementSibling.innerText);
+    });
+    return symptoms;
+    }
+
+    function showResult(type) {
+    const selected = getSelectedSymptoms();
+    const resultDiv = document.getElementById('res-' + type);
+    
+    // สร้างส่วนสรุปอาการ
+    if(selected.length > 0) {
+        const summaryHtml = `<div style="text-align:left; background:rgba(0,0,0,0.1); padding:10px; border-radius:10px; margin-top:10px; font-size:18px;">
+            <strong>อาการที่พบ:</strong><br> - ${selected.join('<br> - ')}
+        </div>`;
+        
+        // แทรกสรุปอาการก่อนปุ่มในหน้าผลลัพธ์
+        const descElement = resultDiv.querySelector('.res-desc');
+        descElement.insertAdjacentHTML('afterend', summaryHtml);
+    }    
+
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    resultDiv.style.display = 'block';
+    window.scrollTo(0, 0);
+    }
+
+    <a href="https://line.me/R/msg/text/?ผลการคัดกรอง: พบอาการแน่นหน้าอก..." class="btn-line">ส่งผลผ่าน LINE</a>
 </script>
 
 </body>
