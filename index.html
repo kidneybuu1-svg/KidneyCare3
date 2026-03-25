@@ -112,12 +112,13 @@
         
         <div class="symptom-list">
             <label class="symptom-item"><input type="checkbox" class="chk-red"><span class="label-text">แน่นหน้าอก / หายใจลำบาก</span></label>
-            <label class="symptom-item"><input type="checkbox" class="chk-red"><span class="label-text">เลือดออกจากแผลฟอกไตไม่หยุด</span></label>
+            <label class="symptom-item"><input type="checkbox" class="chk-red"><span class="label-text">เลือดออกจากเส้นฟอกไตไม่หยุด</span></label>
             <label class="symptom-item"><input type="checkbox" class="chk-red"><span class="label-text">ปากเบี้ยว / แขนขาอ่อนแรงทันที</span></label>
             <label class="symptom-item"><input type="checkbox" class="chk-red"><span class="label-text">ซึมลง / ไม่รู้สึกตัว</span></label>
+            <label class="symptom-item"><input type="checkbox" class="chk-red"><span class="label-text"> ใจสั่น / ใจเต้นเร็ว</span></label>
         </div>
 
-        <button class="btn-main btn-have" onclick="goRed()">มีอาการที่เลือก (ถัดไป)</button>
+        <button class="btn-main btn-have" onclick="goRed()">มีอาการที่เลือก</button>
         <button class="btn-main btn-none" onclick="goStep('step-red', 'step-yellow')">ไม่มีอาการเหล่านี้เลย</button>
     </div>
 
@@ -130,11 +131,13 @@
         <div class="symptom-list">
             <label class="symptom-item"><input type="checkbox" class="chk-yellow"><span class="label-text">มีไข้สูง หรือ หนาวสั่น</span></label>
             <label class="symptom-item"><input type="checkbox" class="chk-yellow"><span class="label-text">ขาบวมมาก / บวมกดบุ๋ม</span></label>
-            <label class="symptom-item"><input type="checkbox" class="chk-yellow"><span class="label-text">แผลฟอกไต ปวด บวม แดง มีหนอง</span></label>
+            <label class="symptom-item"><input type="checkbox" class="chk-yellow"><span class="label-text">เส้นฟอกไต ปวด บวม แดง มีหนอง</span></label>
             <label class="symptom-item"><input type="checkbox" class="chk-yellow"><span class="label-text">คลื่นไส้ อาเจียน ทานไม่ได้</span></label>
+            <label class="symptom-item"><input type="checkbox" class="chk-yellow"><span class="label-text">กระหายน้ำมากผิดปกติ</span></label>
+            
         </div>
 
-        <button class="btn-main btn-have" onclick="goYellow()">มีอาการที่เลือก (ถัดไป)</button>
+        <button class="btn-main btn-have" onclick="goYellow()">มีอาการที่เลือก </button>
         <button class="btn-main btn-none" onclick="goStep('step-yellow', 'step-green')">ไม่มีอาการเหล่านี้เลย</button>
     </div>
 
@@ -148,6 +151,8 @@
             <label class="symptom-item"><input type="checkbox" class="chk-green"><span class="label-text">เป็นตะคริว</span></label>
             <label class="symptom-item"><input type="checkbox" class="chk-green"><span class="label-text">คันตามผิวหนัง</span></label>
             <label class="symptom-item"><input type="checkbox" class="chk-green"><span class="label-text">อ่อนเพลียเล็กน้อย</span></label>
+            <label class="symptom-item"><input type="checkbox" class="chk-green"><span class="label-text">ปวดเมื่อยตามข้อ</span></label>
+             <label class="symptom-item"><input type="checkbox" class="chk-green"><span class="label-text">ท้องผูก</span></label>
         </div>
 
         <button class="btn-main btn-have" onclick="goGreen()">มีอาการที่เลือก (ดูคำแนะนำ)</button>
@@ -158,7 +163,7 @@
     <div id="res-red" class="result-screen res-red">
         <div class="res-icon">🚨</div>
         <div class="res-title">อันตรายรุนแรง!</div>
-        <div class="res-desc">ท่านมีอาการวิกฤต <br><b>กรุณารีบไปห้องฉุกเฉินทันที</b></div>
+        <div class="res-desc">ท่านมีอาการวิกฤต <br><b>ควรรีบมาโรงพยาบาลทันที</b></div>
         <a href="tel:1669" class="btn-call">📞 โทร 1669 (รถพยาบาล)</a>
         <br><button onclick="location.reload()" style="color:white; background:none; border:none; text-decoration:underline;">เริ่มประเมินใหม่</button>
     </div>
@@ -180,7 +185,7 @@
     <div id="res-normal" class="result-screen res-normal">
         <div class="res-icon">😊</div>
         <div class="res-title">ปกติ</div>
-        <div class="res-desc">ไม่พบอาการผิดปกติ <br>ดูแลสุขภาพตามปกติครับ</div>
+        <div class="res-desc">ไม่พบอาการผิดปกติ <br>ดูแลสุขภาพตามปกติ</div>
         <button onclick="location.reload()" class="btn-main btn-have">กลับหน้าแรก</button>
     </div>
 
