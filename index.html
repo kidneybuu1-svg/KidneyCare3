@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบคัดกรองผู้ป่วยไตเทียม</title>
+    <!-- 1. นำเข้า LINE SDK -->
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -15,72 +17,31 @@
             --line-green: #06C755;
         }
 
-        body {
-            font-family: 'Sarabun', sans-serif;
-            background-color: var(--bg);
-            margin: 0;
-            padding: 10px;
-            display: flex;
-            justify-content: center;
-        }
+        body { font-family: 'Sarabun', sans-serif; background-color: var(--bg); margin: 0; padding: 10px; display: flex; justify-content: center; }
+        .container { background: white; width: 100%; max-width: 500px; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-top: 10px; }
+        
+        /* Loading Overlay */
+        #loading { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--blue); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        .container {
-            background: white;
-            width: 100%;
-            max-width: 500px;
-            padding: 20px;
-            border-radius: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            margin-top: 10px;
-        }
-
-        /* ส่วนหัวและ Progress */
         .step-bar { display: flex; justify-content: space-between; margin-bottom: 20px; }
         .step { width: 30%; height: 8px; background: #ddd; border-radius: 10px; }
         .step.active { background: var(--blue); }
 
-        .card-title {
-            padding: 20px;
-            border-radius: 15px;
-            color: white;
-            text-align: center;
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
+        .card-title { padding: 20px; border-radius: 15px; color: white; text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 20px; }
         .bg-red { background-color: var(--red); }
         .bg-yellow { background-color: var(--yellow); color: black; }
         .bg-green { background-color: var(--green); }
 
         .instruction { font-size: 20px; text-align: center; margin-bottom: 15px; color: #444; }
-
-        .symptom-item {
-            display: flex;
-            align-items: center;
-            background: #fff;
-            border: 2px solid #ddd;
-            margin-bottom: 12px;
-            padding: 18px;
-            border-radius: 15px;
-            cursor: pointer;
-        }
+        .symptom-item { display: flex; align-items: center; background: #fff; border: 2px solid #ddd; margin-bottom: 12px; padding: 18px; border-radius: 15px; cursor: pointer; }
         input[type="checkbox"] { width: 30px; height: 30px; margin-right: 15px; }
         .label-text { font-size: 20px; line-height: 1.3; }
 
-        .btn-main {
-            width: 100%;
-            padding: 20px;
-            font-size: 22px;
-            font-weight: bold;
-            border-radius: 15px;
-            border: none;
-            cursor: pointer;
-            margin-bottom: 10px;
-        }
+        .btn-main { width: 100%; padding: 20px; font-size: 22px; font-weight: bold; border-radius: 15px; border: none; cursor: pointer; margin-bottom: 10px; }
         .btn-have { background-color: #333; color: white; }
         .btn-none { background-color: #e0e0e0; color: #444; border: 2px solid #ccc; }
-        
-        /* ปุ่มย้อนกลับ */
         .btn-back { background: none; border: none; color: #666; text-decoration: underline; cursor: pointer; display: block; margin: 10px auto; font-size: 16px; }
 
         .result-screen { display: none; text-align: center; padding: 30px 15px; border-radius: 20px; color: white; }
@@ -92,11 +53,9 @@
         .res-icon { font-size: 70px; margin-bottom: 15px; }
         .res-title { font-size: 32px; font-weight: bold; margin-bottom: 15px; }
         .res-desc { font-size: 22px; margin-bottom: 20px; }
-        
         .summary-box { background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; text-align: left; margin-bottom: 20px; font-size: 18px; }
-        
         .btn-call { display: block; background: white; color: var(--red); text-decoration: none; padding: 18px; border-radius: 50px; font-size: 24px; font-weight: bold; margin-bottom: 10px; }
-        .btn-line { display: block; background: var(--line-green); color: white; text-decoration: none; padding: 18px; border-radius: 50px; font-size: 24px; font-weight: bold; }
+        .btn-save-gas { display: block; background: var(--line-green); color: white; border:none; width:100%; padding: 18px; border-radius: 50px; font-size: 20px; font-weight: bold; cursor:pointer; }
 
         .page { display: none; }
         .page.active { display: block; }
@@ -104,22 +63,25 @@
 </head>
 <body>
 
+<!-- หน้าจอโหลด -->
+<div id="loading">
+    <div class="spinner"></div>
+    <p>กำลังเตรียมข้อมูล...</p>
+</div>
+
 <div class="container">
-    
     <!-- STEP 1: RED -->
     <div id="step-red" class="page active">
         <div class="step-bar"><div class="step active"></div><div class="step"></div><div class="step"></div></div>
         <div class="card-title bg-red">ระดับ 1: อาการรุนแรง</div>
         <div class="instruction">ท่านมีอาการเหล่านี้หรือไม่?</div>
-        
         <div class="symptom-list">
-            <label class="symptom-item"><input type="checkbox" class="chk-red"><span class="label-text">แน่นหน้าอก / หายใจลำบาก / นอนราบไม่ได้</span></label>
-            <label class="symptom-item"><input type="checkbox" class="chk-red"><span class="label-text">เลือดออกจากเส้นฟอกไตไม่หยุด</span></label>
-            <label class="symptom-item"><input type="checkbox" class="chk-red"><span class="label-text">ปากเบี้ยว / แขนขาอ่อนแรงทันที</span></label>
-            <label class="symptom-item"><input type="checkbox" class="chk-red"><span class="label-text">ซึมลง / ไม่รู้สึกตัว</span></label>
-            <label class="symptom-item"><input type="checkbox" class="chk-red"><span class="label-text">ใจสั่น / ใจเต้นเร็ว</span></label>
+            <label class="symptom-item"><input type="checkbox" class="chk-red" value="แน่นหน้าอก/หายใจลำบาก"><span class="label-text">แน่นหน้าอก / หายใจลำบาก / นอนราบไม่ได้</span></label>
+            <label class="symptom-item"><input type="checkbox" class="chk-red" value="เลือดออกจากเส้นไม่หยุด"><span class="label-text">เลือดออกจากเส้นฟอกไตไม่หยุด</span></label>
+            <label class="symptom-item"><input type="checkbox" class="chk-red" value="แขนขาอ่อนแรงทันที"><span class="label-text">ปากเบี้ยว / แขนขาอ่อนแรงทันที</span></label>
+            <label class="symptom-item"><input type="checkbox" class="chk-red" value="ซึมลง/ไม่รู้สึกตัว"><span class="label-text">ซึมลง / ไม่รู้สึกตัว</span></label>
+            <label class="symptom-item"><input type="checkbox" class="chk-red" value="ใจสั่น/ใจเต้นเร็ว"><span class="label-text">ใจสั่น / ใจเต้นเร็ว</span></label>
         </div>
-
         <button class="btn-main btn-have" onclick="checkAndGo('red')">มีอาการที่เลือก</button>
         <button class="btn-main btn-none" onclick="goStep('step-red', 'step-yellow')">ไม่มีอาการเหล่านี้เลย</button>
     </div>
@@ -129,16 +91,14 @@
         <div class="step-bar"><div class="step active"></div><div class="step active"></div><div class="step"></div></div>
         <div class="card-title bg-yellow">ระดับ 2: อาการผิดปกติ</div>
         <div class="instruction">ท่านมีอาการเหล่านี้หรือไม่?</div>
-        
         <div class="symptom-list">
-            <label class="symptom-item"><input type="checkbox" class="chk-yellow"><span class="label-text">มีไข้สูง หรือ หนาวสั่น</span></label>
-            <label class="symptom-item"><input type="checkbox" class="chk-yellow"><span class="label-text">ขาบวมมาก / บวมกดบุ๋ม</span></label>
-            <label class="symptom-item"><input type="checkbox" class="chk-yellow"><span class="label-text">เส้นฟอกไต ปวด บวม แดง มีหนอง</span></label>
-            <label class="symptom-item"><input type="checkbox" class="chk-yellow"><span class="label-text">คลื่นไส้ อาเจียน ทานไม่ได้</span></label>
-            <label class="symptom-item"><input type="checkbox" class="chk-yellow"><span class="label-text">กระหายน้ำมากผิดปกติ</span></label>
+            <label class="symptom-item"><input type="checkbox" class="chk-yellow" value="มีไข้สูง/หนาวสั่น"><span class="label-text">มีไข้สูง หรือ หนาวสั่น</span></label>
+            <label class="symptom-item"><input type="checkbox" class="chk-yellow" value="ขาบวมมาก"><span class="label-text">ขาบวมมาก / บวมกดบุ๋ม</span></label>
+            <label class="symptom-item"><input type="checkbox" class="chk-yellow" value="เส้นปวดบวมแดงมีหนอง"><span class="label-text">เส้นฟอกไต ปวด บวม แดง มีหนอง</span></label>
+            <label class="symptom-item"><input type="checkbox" class="chk-yellow" value="คลื่นไส้อาเจียน"><span class="label-text">คลื่นไส้ อาเจียน ทานไม่ได้</span></label>
+            <label class="symptom-item"><input type="checkbox" class="chk-yellow" value="กระหายน้ำผิดปกติ"><span class="label-text">กระหายน้ำมากผิดปกติ</span></label>
         </div>
-
-        <button class="btn-main btn-have" onclick="checkAndGo('yellow')">มีอาการที่เลือก </button>
+        <button class="btn-main btn-have" onclick="checkAndGo('yellow')">มีอาการที่เลือก</button>
         <button class="btn-main btn-none" onclick="goStep('step-yellow', 'step-green')">ไม่มีอาการเหล่านี้เลย</button>
         <button class="btn-back" onclick="goStep('step-yellow', 'step-red')">ย้อนกลับ</button>
     </div>
@@ -148,67 +108,80 @@
         <div class="step-bar"><div class="step active"></div><div class="step active"></div><div class="step active"></div></div>
         <div class="card-title bg-green">ระดับ 3: อาการเล็กน้อย</div>
         <div class="instruction">ท่านมีอาการเหล่านี้หรือไม่?</div>
-        
         <div class="symptom-list">
-            <label class="symptom-item"><input type="checkbox" class="chk-green"><span class="label-text">เป็นตะคริว</span></label>
-            <label class="symptom-item"><input type="checkbox" class="chk-green"><span class="label-text">คันตามผิวหนัง</span></label>
-            <label class="symptom-item"><input type="checkbox" class="chk-green"><span class="label-text">อ่อนเพลียเล็กน้อย</span></label>
-            <label class="symptom-item"><input type="checkbox" class="chk-green"><span class="label-text">ปวดเมื่อยตามข้อ</span></label>
-            <label class="symptom-item"><input type="checkbox" class="chk-green"><span class="label-text">ท้องผูก</span></label>
+            <label class="symptom-item"><input type="checkbox" class="chk-green" value="เป็นตะคริว"><span class="label-text">เป็นตะคริว</span></label>
+            <label class="symptom-item"><input type="checkbox" class="chk-green" value="คันตามผิวหนัง"><span class="label-text">คันตามผิวหนัง</span></label>
+            <label class="symptom-item"><input type="checkbox" class="chk-green" value="อ่อนเพลียเล็กน้อย"><span class="label-text">อ่อนเพลียเล็กน้อย</span></label>
+            <label class="symptom-item"><input type="checkbox" class="chk-green" value="ปวดเมื่อยตามข้อ"><span class="label-text">ปวดเมื่อยตามข้อ</span></label>
+            <label class="symptom-item"><input type="checkbox" class="chk-green" value="ท้องผูก"><span class="label-text">ท้องผูก</span></label>
         </div>
-
         <button class="btn-main btn-have" onclick="checkAndGo('green')">มีอาการที่เลือก</button>
         <button class="btn-main btn-none" onclick="showResult('normal')">ไม่มีอาการเลย (ปกติ)</button>
         <button class="btn-back" onclick="goStep('step-green', 'step-yellow')">ย้อนกลับ</button>
     </div>
 
-    <!-- RESULT SCREENS (สรุปผลจะถูกเติมใน .summary-box) -->
+    <!-- RESULT SCREENS -->
     <div id="res-red" class="result-screen res-red">
-        <div class="res-icon">🚨</div>
-        <div class="res-title">อันตรายรุนแรง!</div>
-        <div class="res-desc">ควรรีบมาโรงพยาบาลทันที</div>
+        <div class="res-icon">🚨</div><div class="res-title">อันตรายรุนแรง!</div><div class="res-desc">ควรรีบมาโรงพยาบาลทันที</div>
         <div class="summary-box"></div>
         <a href="tel:1669" class="btn-call">📞 โทร 1669 (รถพยาบาล)</a>
-        <a href="#" class="btn-line btn-share-line">แชร์อาการไปที่ LINE</a>
-        <br><button onclick="location.reload()" style="color:white; background:none; border:none; text-decoration:underline;">เริ่มประเมินใหม่</button>
+        <button id="btn-save-red" class="btn-save-gas" onclick="saveData('red')">💾 บันทึกและแจ้งพยาบาล</button>
     </div>
 
     <div id="res-yellow" class="result-screen res-yellow">
-        <div class="res-icon">⚠️</div>
-        <div class="res-title">ควรปรึกษาแพทย์</div>
-        <div class="res-desc">กรุณาติดต่อพยาบาลไตเทียม</div>
+        <div class="res-icon">⚠️</div><div class="res-title">ควรปรึกษาแพทย์</div><div class="res-desc">กรุณาติดต่อพยาบาลไตเทียม</div>
         <div class="summary-box"></div>
-        <a href="#" class="btn-line btn-share-line">แชร์อาการไปที่ LINE</a>
-        <br><button onclick="location.reload()" class="btn-main btn-have">กลับหน้าแรก</button>
+        <button id="btn-save-yellow" class="btn-save-gas" onclick="saveData('yellow')">💾 บันทึกและแจ้งพยาบาล</button>
     </div>
 
     <div id="res-green" class="result-screen res-green">
-        <div class="res-icon">✅</div>
-        <div class="res-title">อาการทั่วไป</div>
-        <div class="res-desc">แนะนำให้พักผ่อนและสังเกตอาการ</div>
+        <div class="res-icon">✅</div><div class="res-title">อาการทั่วไป</div><div class="res-desc">แนะนำให้พักผ่อนและสังเกตอาการ</div>
         <div class="summary-box"></div>
-        <a href="#" class="btn-line btn-share-line">แชร์อาการไปที่ LINE</a>
-        <br><button onclick="location.reload()" class="btn-main btn-have">กลับหน้าแรก</button>
+        <button id="btn-save-green" class="btn-save-gas" onclick="saveData('green')">💾 บันทึกข้อมูล</button>
     </div>
 
     <div id="res-normal" class="result-screen res-normal">
-        <div class="res-icon">😊</div>
-        <div class="res-title">ปกติ</div>
-        <div class="res-desc">ดูแลสุขภาพตามปกติ</div>
-        <button onclick="location.reload()" class="btn-main btn-have">กลับหน้าแรก</button>
+        <div class="res-icon">😊</div><div class="res-title">ปกติ</div><div class="res-desc">ดูแลสุขภาพตามปกติ</div>
+        <button id="btn-save-normal" class="btn-save-gas" onclick="saveData('normal')">💾 บันทึกข้อมูล</button>
     </div>
-
 </div>
 
 <script>
-    // 1. ฟังก์ชันเปลี่ยนหน้า
+    // --- ตั้งค่า LIFF และ GAS ---
+    const MY_LIFF_ID = "ใส่_LIFF_ID_ของคุณที่นี่"; 
+    const GAS_URL = "ใส่_URL_WEB_APP_ของ_GAS_ที่นี่";
+
+    let userId = "";
+    let userName = "";
+
+    async function initLIFF() {
+        try {
+            await liff.init({ liffId: MY_LIFF_ID });
+            if (!liff.isLoggedIn()) {
+                liff.login();
+            } else {
+                const profile = await liff.getProfile();
+                userId = profile.userId;
+                userName = profile.displayName;
+                document.getElementById('loading').style.display = 'none';
+            }
+        } catch (err) {
+            console.error("LIFF Error", err);
+            // ถ้าเปิดในคอมพิวเตอร์ทั่วไปให้จำลองข้อมูลเพื่อทดสอบ
+            userId = "test-user";
+            userName = "คุณทดสอบ";
+            document.getElementById('loading').style.display = 'none';
+        }
+    }
+
+    window.onload = initLIFF;
+
     function goStep(currentId, nextId) {
         document.getElementById(currentId).classList.remove('active');
         document.getElementById(nextId).classList.add('active');
         window.scrollTo(0, 0);
     }
 
-    // 2. ฟังก์ชันตรวจสอบการเลือกอาการก่อนไปหน้าผลลัพธ์
     function checkAndGo(level) {
         const checkedCount = document.querySelectorAll('.chk-' + level + ':checked').length;
         if (checkedCount > 0) {
@@ -218,7 +191,6 @@
         }
     }
 
-    // 3. ฟังก์ชันดึงชื่ออาการที่เลือก
     function getSelectedSymptoms() {
         let symptoms = [];
         document.querySelectorAll('input[type="checkbox"]:checked').forEach(item => {
@@ -227,30 +199,57 @@
         return symptoms;
     }
 
-    // 4. ฟังก์ชันแสดงหน้าสรุปผล
     function showResult(type) {
         const symptoms = getSelectedSymptoms();
         const resultDiv = document.getElementById('res-' + type);
-        
-        // ซ่อนหน้าคำถามทั้งหมด
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         
-        // ถ้ามีอาการที่เลือก ให้แสดงใน summary-box
         const summaryBox = resultDiv.querySelector('.summary-box');
-        if (summaryBox && symptoms.length > 0) {
-            summaryBox.innerHTML = "<strong>อาการที่พบ:</strong><br>• " + symptoms.join('<br>• ');
-            
-            // ปรับลิงก์ LINE ให้ส่งข้อความอาการได้จริง
-            const lineBtn = resultDiv.querySelector('.btn-share-line');
-            if (lineBtn) {
-                const text = encodeURIComponent("ผลการคัดกรอง: " + (type==='red'?'วิกฤต':type==='yellow'?'ผิดปกติ':'ทั่วไป') + "\nอาการ: " + symptoms.join(', '));
-                lineBtn.href = "https://line.me/R/msg/text/?" + text;
-            }
+        if (summaryBox) {
+            summaryBox.innerHTML = symptoms.length > 0 
+                ? "<strong>อาการที่พบ:</strong><br>• " + symptoms.join('<br>• ')
+                : "<strong>สถานะ:</strong> ปกติ ไม่มีอาการผิดปกติ";
         }
 
-        // แสดงหน้าผลลัพธ์
         resultDiv.style.display = 'block';
         window.scrollTo(0, 0);
+    }
+
+    async function saveData(level) {
+        const symptoms = getSelectedSymptoms();
+        const levelNames = { 'red': 'วิกฤต (แดง)', 'yellow': 'ผิดปกติ (เหลือง)', 'green': 'ทั่วไป (เขียว)', 'normal': 'ปกติ' };
+        
+        const btn = document.querySelector('#res-' + level + ' .btn-save-gas');
+        btn.disabled = true;
+        btn.innerText = "⏳ กำลังบันทึก...";
+
+        const data = {
+            userId: userId,
+            userName: userName,
+            level: level,
+            levelName: levelNames[level],
+            symptoms: symptoms.length > 0 ? symptoms.join(', ') : "ไม่มีอาการ"
+        };
+
+        try {
+            const response = await fetch(GAS_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                alert("บันทึกข้อมูลเรียบร้อยแล้ว");
+                liff.closeWindow();
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error) {
+            alert("❌ เกิดข้อผิดพลาด: " + error.message);
+            btn.disabled = false;
+            btn.innerText = "💾 ลองบันทึกอีกครั้ง";
+        }
     }
 </script>
 
